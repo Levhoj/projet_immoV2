@@ -50,9 +50,15 @@ export default async function AnnoncePage({ params }: { params: Promise<{ uuid: 
 
   // Paramètres pré-remplis pour le simulateur
   const simulParams = new URLSearchParams()
-  if (property.price) simulParams.set('prix', property.price)
-  if (advert?.condominiumFees) simulParams.set('copro', advert.condominiumFees)
-  if (property.surface) simulParams.set('surface', property.surface)
+  if (property.price) simulParams.set('prix', String(property.price))
+  if (advert?.condominiumFees) simulParams.set('copro', String(advert.condominiumFees))
+  if (property.surface) simulParams.set('surface', String(property.surface))
+  if (property.title) simulParams.set('titre', property.title)
+  if (property.city?.name) simulParams.set('ville', property.city.name)
+  if (property.city?.zipcode) simulParams.set('cp', property.city.zipcode)
+  if (advert?.pictures?.[0]) simulParams.set('photo', advert.pictures[0])
+  else if (advert?.picturesRemote?.[0]) simulParams.set('photo', advert.picturesRemote[0])
+  if (property.pricePerMeter) simulParams.set('ppm', String(Math.round(property.pricePerMeter)))
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -242,7 +248,7 @@ export default async function AnnoncePage({ params }: { params: Promise<{ uuid: 
               </div>
 
               <Link
-                href={`/annonce/${property.uuid}/simuler`}
+                href={`/annonce/${property.uuid}/simuler?${simulParams.toString()}`}
                 className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
                 <TrendingUp size={15} /> Simuler la rentabilité
               </Link>

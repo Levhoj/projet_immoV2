@@ -1,58 +1,37 @@
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { ChevronLeft, MapPin, Maximize2, Home, TrendingUp, Lock } from 'lucide-react'
 import CalculateurRentabilite from '@/components/calculateurs/CalculateurRentabilite'
 import { isUserPremium } from '@/lib/supabase'
 
-async function getProperty(uuid: string) {
-  try {
-    const res = await fetch(
-      `https://preprod-api.notif.immo/documents/properties/${uuid}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': process.env.MELO_API_KEY!,
-        },
-        next: { revalidate: 300 },
-      }
-    )
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
-}
-
 export default async function SimulerPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ uuid: string }>
+  searchParams: Promise<{ [key: string]: string | undefined }>
 }) {
   const { uuid } = await params
+  const sp = await searchParams
+
   const { userId } = await auth()
   if (!userId) redirect('/login')
 
-  const [property, isPremium] = await Promise.all([
-    getProperty(uuid),
-    isUserPremium(userId),
-  ])
+  const isPremium = await isUserPremium(userId)
 
-  if (!property) notFound()
+  // Lire toutes les données depuis les params URL — zéro appel Melo
+  const prix    = sp.prix    ? parseInt(sp.prix)    : undefined
+  const copro   = sp.copro   ? parseInt(sp.copro)   : undefined
+  const surface = sp.surface ? parseInt(sp.surface) : undefined
+  const notaire = prix ? Math.round(prix * 0.08) : 16000
+  const titre   = sp.titre ?? 'Bien immobilier'
+  const ville   = sp.ville ?? ''
+  const cp      = sp.cp ?? ''
+  const photo   = sp.photo ?? null
+  const ppm     = sp.ppm ? parseInt(sp.ppm) : undefined
 
-  const advert = property.adverts?.[0]
-  const pics = advert?.pictures?.length ? advert.pictures : advert?.picturesRemote ?? []
-  const pic = pics[0] ?? null
-
-  // Calcul automatique des frais de notaire (~8% pour l'ancien)
-  const fraisNotaire = property.price > 0 ? Math.round(property.price * 0.08) : 16000
-
-  const initialValues = {
-    prix:    property.price > 0 ? property.price : undefined,
-    notaire: fraisNotaire,
-    copro:   advert?.condominiumFees > 0 ? advert.condominiumFees : undefined,
-    surface: property.surface > 0 ? property.surface : undefined,
-  }
+  const initialValues = { prix, copro, surface, notaire }
 
   if (!isPremium) {
     return (
@@ -89,7 +68,7 @@ export default async function SimulerPage({
           <Link href="/recherche" className="text-slate-400 hover:text-sky-500 transition-colors">Recherche</Link>
           <span className="text-slate-200">/</span>
           <Link href={`/annonce/${uuid}`} className="text-slate-400 hover:text-sky-500 transition-colors truncate max-w-xs">
-            {property.title}
+            {titre}
           </Link>
           <span className="text-slate-200">/</span>
           <span className="text-slate-600">Simulation</span>
@@ -98,12 +77,11 @@ export default async function SimulerPage({
 
       <div className="max-w-5xl mx-auto px-6 py-8">
 
-        {/* Rappel du bien */}
-        <div className="bg-slate-900 rounded-2xl p-5 mb-8 flex items-center gap-5">
-          {/* Photo */}
+        {/* Rappel du bien — données depuis l'URL, 0 appel API */}
+        <div className="bg-slate-900 rounded-2xl p-5 mb-6 flex items-center gap-5">
           <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-700">
-            {pic ? (
-              <img src={pic} alt={property.title} className="w-full h-full object-cover" />
+            {photo ? (
+              <img src={photo} alt={titre} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <Home size={24} className="text-slate-500" />
@@ -111,45 +89,48 @@ export default async function SimulerPage({
             )}
           </div>
 
-          {/* Infos */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp size={13} className="text-sky-400 flex-shrink-0" />
               <span className="text-xs font-semibold text-sky-400 uppercase tracking-widest">Simulation en cours</span>
             </div>
-            <h1 className="text-white font-bold text-base truncate mb-1">{property.title}</h1>
+            <h1 className="text-white font-bold text-base truncate mb-1">{titre}</h1>
             <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-1 text-slate-400 text-xs">
-                <MapPin size={11} />
-                <span>{property.city.name} ({property.city.zipcode})</span>
-              </div>
-              {property.surface > 0 && (
+              {ville && (
+                <div className="flex items-center gap-1 text-slate-400 text-xs">
+                  <MapPin size={11} />
+                  <span>{ville} {cp && `(${cp})`}</span>
+                </div>
+              )}
+              {surface && (
                 <div className="flex items-center gap-1 text-slate-400 text-xs">
                   <Maximize2 size={11} />
-                  <span>{property.surface} m²</span>
+                  <span>{surface} m²</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Prix */}
           <div className="text-right flex-shrink-0">
-            <div className="text-2xl font-extrabold text-white">
-              {property.price > 0 ? property.price.toLocaleString('fr-FR') + ' €' : '—'}
-            </div>
-            {property.pricePerMeter > 0 && (
-              <div className="text-xs text-slate-400">{Math.round(property.pricePerMeter).toLocaleString('fr-FR')} €/m²</div>
+            {prix && (
+              <>
+                <div className="text-2xl font-extrabold text-white">
+                  {prix.toLocaleString('fr-FR')} €
+                </div>
+                {ppm && (
+                  <div className="text-xs text-slate-400">{ppm.toLocaleString('fr-FR')} €/m²</div>
+                )}
+              </>
             )}
           </div>
 
-          {/* Lien retour */}
           <Link href={`/annonce/${uuid}`}
             className="flex-shrink-0 flex items-center gap-1.5 text-xs text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500 px-3 py-2 rounded-lg transition-colors ml-2">
             <ChevronLeft size={13} /> Annonce
           </Link>
         </div>
 
-        {/* Infos pré-remplies */}
+        {/* Info pré-remplissage */}
         <div className="bg-sky-50 border border-sky-200 rounded-xl px-5 py-3 mb-8 flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-sky-500 flex-shrink-0" />
           <p className="text-sm text-sky-700">
@@ -159,7 +140,7 @@ export default async function SimulerPage({
           </p>
         </div>
 
-        {/* Calculateur pré-rempli */}
+        {/* Calculateur pré-rempli — même composant, zéro duplication */}
         <CalculateurRentabilite initial={initialValues} />
 
       </div>
