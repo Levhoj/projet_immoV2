@@ -2,16 +2,16 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
+import { isPremiumUser } from '@/lib/supabase'
 import CalculateurRentabilite from '@/components/calculateurs/CalculateurRentabilite'
 
 export default async function RentabilitePage() {
   const { userId } = await auth()
   if (!userId) redirect('/login')
 
-  // TODO: brancher la vraie vérification Premium via Supabase
-  const isPremium = true
+  const premium = await isPremiumUser(userId)
 
-  if (!isPremium) {
+  if (!premium) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
         <div className="text-center max-w-md">
