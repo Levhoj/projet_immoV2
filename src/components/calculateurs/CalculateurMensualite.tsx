@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 
 function calculerMensualite(capital: number, tauxAnnuel: number, dureeAns: number): number {
   const r = tauxAnnuel / 100 / 12
