@@ -1,52 +1,52 @@
-/**
- * Page outil : Rentabilité nette nette (accès Premium uniquement)
- * Vérifie le statut premium avant d'afficher le simulateur.
- * TODO : brancher la vérification réelle via Supabase ou Clerk metadata.
- */
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
+import CalculateurRentabilite from '@/components/calculateurs/CalculateurRentabilite'
 
 export default async function RentabilitePage() {
   const { userId } = await auth()
   if (!userId) redirect('/login')
 
-  // TODO: vérifier le vrai statut premium en base
+  // TODO: brancher la vraie vérification Premium via Supabase
   const isPremium = false
 
   if (!isPremium) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-        <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Lock size={24} className="text-amber-600" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Lock size={28} className="text-amber-500" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-3">
+            Fonctionnalité Premium
+          </h1>
+          <p className="text-slate-500 mb-8 leading-relaxed">
+            Le calculateur de rentabilité nette nette avec les 4 régimes fiscaux est réservé aux abonnés Premium.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/tarifs"
+              className="bg-sky-500 hover:bg-sky-600 text-white px-8 py-3 rounded-xl font-semibold transition-colors">
+              Voir les offres Premium
+            </Link>
+            <Link href="/dashboard"
+              className="bg-white hover:bg-slate-50 text-slate-700 px-8 py-3 rounded-xl font-medium border border-slate-200 transition-colors">
+              Retour au dashboard
+            </Link>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-3">
-          Fonctionnalité Premium
-        </h1>
-        <p className="text-slate-500 mb-8 max-w-md mx-auto">
-          Le calculateur de rentabilité nette nette avec les 4 régimes fiscaux
-          est réservé aux abonnés Premium.
-        </p>
-        <Link
-          href="/tarifs"
-          className="bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 rounded-lg font-medium transition-colors inline-block"
-        >
-          Voir les offres Premium
-        </Link>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">
-        Rentabilité nette nette
-      </h1>
-      <p className="text-slate-500 mb-8">4 régimes fiscaux · Emprunt intégré</p>
-      {/* TODO: <CalculateurRentabilite /> */}
-      <div className="border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-400">
-        Composant React à intégrer
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        <div className="mb-10">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Rentabilité nette nette</h1>
+          <p className="text-slate-500">4 régimes fiscaux · Emprunt intégré · Cash-flow réel</p>
+        </div>
+        <CalculateurRentabilite />
       </div>
     </div>
   )
