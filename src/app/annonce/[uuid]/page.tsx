@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation'
+import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
-import { MapPin, Maximize2, Home, BedDouble, Calendar, Zap, ChevronLeft, ExternalLink, Building2, TrendingUp } from 'lucide-react'
+import { MapPin, Maximize2, Home, BedDouble, Calendar, ChevronLeft, ExternalLink, Building2, TrendingUp } from 'lucide-react'
+import SaveButton from '@/components/ui/SaveButton'
+import { isPropertySaved } from '@/lib/supabase'
 
 async function getProperty(uuid: string) {
   try {
@@ -252,6 +255,23 @@ export default async function AnnoncePage({ params }: { params: Promise<{ uuid: 
                 className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
                 <TrendingUp size={15} /> Simuler la rentabilité
               </Link>
+
+              {userId && (
+                <div className="mt-3">
+                  <SaveButton
+                    uuid={property.uuid}
+                    titre={property.title}
+                    ville={property.city?.name ?? ''}
+                    cp={property.city?.zipcode ?? ''}
+                    prix={property.price ?? 0}
+                    surface={property.surface ?? 0}
+                    ppm={property.pricePerMeter ? Math.round(property.pricePerMeter) : 0}
+                    photo={pics[0] ?? ''}
+                    copro={advert?.condominiumFees ?? 0}
+                    initialSaved={alreadySaved}
+                  />
+                </div>
+              )}
 
               {advert?.url && (
                 <a href={advert.url} target="_blank" rel="noopener noreferrer"

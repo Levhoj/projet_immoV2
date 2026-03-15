@@ -1,11 +1,12 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Calculator, FileSpreadsheet, TrendingUp, ChevronRight, Lock, ArrowUpRight } from 'lucide-react'
+import { Search, Calculator, FileSpreadsheet, TrendingUp, ChevronRight, Lock, ArrowUpRight, Bookmark } from 'lucide-react'
 import { isUserPremium } from '@/lib/supabase'
 
 const TOOLS = [
   { href: '/recherche', icon: Search, bg: 'bg-sky-50', color: 'text-sky-600', title: 'Recherche immobilière', desc: '900+ sources · Filtres avancés', premium: false },
+  { href: '/mes-annonces', icon: Bookmark, bg: 'bg-rose-50', color: 'text-rose-500', title: 'Mes annonces sauvegardées', desc: 'Retrouvez vos favoris', premium: false },
   { href: '/outils/calculateur-mensualite', icon: Calculator, bg: 'bg-amber-50', color: 'text-amber-600', title: 'Calculateur de mensualité', desc: 'Taux fixe · Assurance incluse', premium: false },
   { href: '/outils/tableau-amortissement', icon: FileSpreadsheet, bg: 'bg-violet-50', color: 'text-violet-600', title: "Tableau d'amortissement", desc: 'Vue mensuelle et annuelle', premium: false },
   { href: '/outils/rentabilite', icon: TrendingUp, bg: 'bg-emerald-50', color: 'text-emerald-600', title: 'Rentabilité nette nette', desc: '4 régimes fiscaux · Emprunt intégré', premium: true },

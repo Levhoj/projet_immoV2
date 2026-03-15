@@ -37,6 +37,7 @@ const NAV_LINKS_PUBLIC = [
 
 const NAV_LINKS_AUTH = [
   { href: '/recherche', label: 'Recherche' },
+  { href: '/mes-annonces', label: 'Mes annonces' },
 ]
 
 export default function Navbar() {

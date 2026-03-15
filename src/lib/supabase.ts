@@ -81,3 +81,60 @@ export async function setStripeCustomerId(clerkUserId: string, stripeCustomerId:
     .upsert({ clerk_user_id: clerkUserId, stripe_customer_id: stripeCustomerId }, { onConflict: 'clerk_user_id' })
   if (error) throw error
 }
+
+
+// ─── Annonces sauvegardées ────────────────────────────────────────────────────
+
+export interface SavedProperty {
+  id: string
+  clerk_user_id: string
+  uuid: string
+  titre: string
+  ville: string
+  cp: string
+  prix: number
+  surface: number
+  ppm: number
+  photo: string
+  copro: number
+  created_at: string
+}
+
+export async function getSavedProperties(clerkUserId: string): Promise<SavedProperty[]> {
+  const { data, error } = await supabaseAdmin
+    .from('saved_properties')
+    .select('*')
+    .eq('clerk_user_id', clerkUserId)
+    .order('created_at', { ascending: false })
+  if (error) return []
+  return data ?? []
+}
+
+export async function saveProperty(clerkUserId: string, property: Omit<SavedProperty, 'id' | 'clerk_user_id' | 'created_at'>) {
+  const { data, error } = await supabaseAdmin
+    .from('saved_properties')
+    .upsert({ clerk_user_id: clerkUserId, ...property }, { onConflict: 'clerk_user_id,uuid' })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function unsaveProperty(clerkUserId: string, uuid: string) {
+  const { error } = await supabaseAdmin
+    .from('saved_properties')
+    .delete()
+    .eq('clerk_user_id', clerkUserId)
+    .eq('uuid', uuid)
+  if (error) throw error
+}
+
+export async function isPropertySaved(clerkUserId: string, uuid: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from('saved_properties')
+    .select('id')
+    .eq('clerk_user_id', clerkUserId)
+    .eq('uuid', uuid)
+    .single()
+  return !!data
+}
