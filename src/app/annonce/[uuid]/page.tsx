@@ -35,8 +35,9 @@ function EnergyBadge({ category }: { category: string }) {
   )
 }
 
-export default async function AnnoncePage({ params }: { params: { uuid: string } }) {
-  const property = await getProperty(params.uuid)
+export default async function AnnoncePage({ params }: { params: Promise<{ uuid: string }> }) {
+  const { uuid } = await params
+  const property = await getProperty(uuid)
   if (!property) notFound()
 
   const advert = property.adverts?.[0]
