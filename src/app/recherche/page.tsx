@@ -69,7 +69,7 @@ function PropertyCard({ property }: { property: Property }) {
   const typeLabels: Record<number, string> = { 0: 'Appartement', 1: 'Maison', 2: 'Immeuble', 3: 'Parking', 4: 'Bureau', 5: 'Terrain' }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md transition-all group">
+    <Link href={`/annonce/${property.uuid}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-sky-200 transition-all group block">
       <div className="relative h-44 bg-slate-100 overflow-hidden">
         {pic ? (
           <img src={pic} alt={property.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -124,21 +124,23 @@ function PropertyCard({ property }: { property: Property }) {
           <div className="flex gap-2">
             {advert?.url && (
               <a href={advert.url} target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
                 className="p-2 rounded-lg border border-slate-200 hover:border-slate-400 text-slate-500 hover:text-slate-700 transition-colors">
                 <ExternalLink size={14} />
               </a>
             )}
             {property.transactionType === 0 && property.price > 0 && (
-              <Link href={`/outils/calculateur-mensualite?prix=${property.price}`}
+              <Link href={`/annonce/${property.uuid}`}
+                onClick={e => e.stopPropagation()}
                 className="p-2 rounded-lg border border-sky-200 hover:border-sky-400 text-sky-500 hover:text-sky-700 transition-colors"
-                title="Simuler la mensualité">
+                title="Voir le détail">
                 <Calculator size={14} />
               </Link>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
 
