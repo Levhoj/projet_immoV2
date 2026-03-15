@@ -152,7 +152,7 @@ export default function Navbar() {
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors font-medium">
               Connexion
             </Link>
-            <Link href="/login" className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+            <Link href="/signup" className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
               Commencer
             </Link>
           </SignedOut>

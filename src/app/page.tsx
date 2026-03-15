@@ -55,7 +55,7 @@ export default function HomePage() {
               la rentabilité nette nette en quelques clics.
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Link href="/login"
+              <Link href="/signup"
                 className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors flex items-center gap-2">
                 Commencer gratuitement <ArrowRight size={16} />
               </Link>
