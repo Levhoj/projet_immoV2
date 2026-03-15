@@ -2,44 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground: #0F172A;
-  --background: #F8FAFC;
-}
-
 body {
-  color: var(--foreground);
-  background: var(--background);
   font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-@layer components {
-  .btn-primary {
-    @apply bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm;
-  }
-  .btn-secondary {
-    @apply bg-white hover:bg-dark-50 text-dark-700 font-medium px-5 py-2.5 rounded-xl border border-dark-200 transition-colors text-sm;
-  }
-  .btn-ghost {
-    @apply text-dark-500 hover:text-dark-700 hover:bg-dark-100 font-medium px-4 py-2 rounded-lg transition-colors text-sm;
-  }
-  .card {
-    @apply bg-white rounded-2xl border border-dark-200 p-6;
-  }
-  .section-tag {
-    @apply text-xs font-bold text-brand-500 uppercase tracking-widest mb-2;
-  }
-  .section-title {
-    @apply text-2xl font-extrabold text-dark-900 tracking-tight mb-2;
-  }
-  .section-sub {
-    @apply text-sm text-dark-500 mb-8;
-  }
-  .input {
-    @apply w-full px-3 py-2 text-sm border border-dark-200 rounded-xl focus:outline-none focus:border-brand-400 bg-white text-dark-900 placeholder-dark-400;
-  }
-  .badge {
-    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
-  }
 }

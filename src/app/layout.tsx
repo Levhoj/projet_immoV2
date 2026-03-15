@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       afterSignUpUrl="/dashboard"
     >
       <html lang="fr">
-        <body className={`${inter.variable} bg-dark-50`}>
+        <body className={`${inter.variable} bg-slate-50`}>
           <Navbar />
           {children}
         </body>
