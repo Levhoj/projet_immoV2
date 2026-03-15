@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
+import Navbar from '@/components/layout/Navbar'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'ImmoCalc — Simulateur immobilier',
-  description: 'Calculez la rentabilité de vos investissements immobiliers',
+  title: 'Rendivo — Investissement immobilier intelligent',
+  description: 'Trouvez les meilleurs investissements immobiliers. Agrégateur d\'annonces + simulateur de rentabilité nette nette.',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider
       signInUrl="/login"
@@ -23,7 +20,10 @@ export default function RootLayout({
       afterSignUpUrl="/dashboard"
     >
       <html lang="fr">
-        <body className={inter.variable}>{children}</body>
+        <body className={`${inter.variable} bg-dark-50`}>
+          <Navbar />
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   )
