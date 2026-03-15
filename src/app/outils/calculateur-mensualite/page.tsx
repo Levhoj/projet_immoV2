@@ -1,4 +1,4 @@
-import CalculateurMensualite from 'src/components/calculateurs/CalculateurMensualite'
+import CalculateurMensualite from '@/components/calculateurs/CalculateurMensualite.tsx'
 
 export default function CalculateurMensualitePage() {
   return (
