@@ -9,7 +9,7 @@ export default async function RentabilitePage() {
   if (!userId) redirect('/login')
 
   // TODO: brancher la vraie vérification Premium via Supabase
-  const isPremium = false
+  const isPremium = true
 
   if (!isPremium) {
     return (
