@@ -69,7 +69,7 @@ function PropertyCard({ property }: { property: Property }) {
   const typeLabels: Record<number, string> = { 0: 'Appartement', 1: 'Maison', 2: 'Immeuble', 3: 'Parking', 4: 'Bureau', 5: 'Terrain' }
 
   return (
-    <Link href={`/annonce/${property.uuid}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-sky-200 transition-all group block">
+    <Link href={`/annonce/${property.uuid}?titre=${encodeURIComponent(property.title)}&ville=${encodeURIComponent(property.city?.name ?? '')}&cp=${encodeURIComponent(property.city?.zipcode ?? '')}&prix=${property.price ?? 0}&surface=${property.surface ?? 0}&ppm=${Math.round(property.pricePerMeter ?? 0)}&photo=${encodeURIComponent(pics[0] ?? '')}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-sky-200 transition-all group block">
       <div className="relative h-44 bg-slate-100 overflow-hidden">
         {pic ? (
           <img src={pic} alt={property.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -194,6 +194,7 @@ export default function RecherchePage() {
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [showFilters, setShowFilters] = useState(true)
+  const [limitError, setLimitError] = useState<{ message: string; limit: number } | null>(null)
   const locationRef = useRef<HTMLDivElement>(null)
   const suggestionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -270,8 +271,15 @@ export default function RecherchePage() {
     try {
       const res = await fetch(`/api/melo/properties?${params.toString()}`)
       const data = await res.json()
-      setProperties(data['hydra:member'] ?? [])
-      setTotal(data['hydra:totalItems'] ?? 0)
+      if (res.status === 429) {
+        setLimitError({ message: data.message, limit: data.limit })
+        setProperties([])
+        setTotal(0)
+      } else {
+        setLimitError(null)
+        setProperties(data['hydra:member'] ?? [])
+        setTotal(data['hydra:totalItems'] ?? 0)
+      }
     } catch {
       setProperties([])
       setTotal(0)
@@ -399,7 +407,25 @@ export default function RecherchePage() {
             </div>
           )}
 
-          {hasSearched && !loading && properties.length === 0 && (
+          {hasSearched && !loading && limitError && (
+            <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+              <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+                <Search size={24} className="text-amber-400" />
+              </div>
+              <h2 className="text-base font-semibold text-slate-700 mb-2">Limite atteinte</h2>
+              <p className="text-slate-400 text-sm max-w-xs mb-5">{limitError.message}</p>
+              <div className="flex gap-3">
+                <a href="/signup" className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors">
+                  S'inscrire gratuitement
+                </a>
+                <a href="/tarifs" className="border border-slate-200 hover:border-slate-400 text-slate-600 text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
+                  Voir Premium
+                </a>
+              </div>
+            </div>
+          )}
+
+          {hasSearched && !loading && properties.length === 0 && !limitError && (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <Home size={24} className="text-slate-400" />

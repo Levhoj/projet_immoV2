@@ -1,11 +1,55 @@
+import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { isUserPremium, canSearch, incrementSearchCount, SEARCH_LIMITS } from '@/lib/supabase'
+import { cookies } from 'next/headers'
 
 const MELO_BASE = 'https://preprod-api.notif.immo/documents/properties'
+const ANON_COOKIE = 'rendivo_search_count'
+const ANON_DATE_COOKIE = 'rendivo_search_date'
+
+// Rate limiting pour les visiteurs non connectés via cookie
+async function getAnonSearchCount(): Promise<number> {
+  const cookieStore = await cookies()
+  const today = new Date().toISOString().split('T')[0]
+  const date = cookieStore.get(ANON_DATE_COOKIE)?.value
+  if (date !== today) return 0
+  return parseInt(cookieStore.get(ANON_COOKIE)?.value ?? '0')
+}
 
 export async function GET(req: NextRequest) {
+  const { userId } = await auth()
   const { searchParams } = new URL(req.url)
-  const params = new URLSearchParams()
 
+  // ── Rate limiting ──────────────────────────────────────────────────────────
+  if (!userId) {
+    // Visiteur anonyme — vérification via cookie
+    const count = await getAnonSearchCount()
+    if (count >= SEARCH_LIMITS.anonymous) {
+      return NextResponse.json({
+        error: 'LIMIT_REACHED',
+        message: `Vous avez atteint la limite de ${SEARCH_LIMITS.anonymous} recherches. Inscrivez-vous gratuitement pour en faire plus.`,
+        limit: SEARCH_LIMITS.anonymous,
+        count,
+      }, { status: 429 })
+    }
+  } else {
+    // Utilisateur connecté
+    const premium = await isUserPremium(userId)
+    if (!premium) {
+      const { allowed, count, limit } = await canSearch(userId, false)
+      if (!allowed) {
+        return NextResponse.json({
+          error: 'LIMIT_REACHED',
+          message: `Vous avez atteint la limite de ${limit} recherches aujourd'hui. Passez Premium pour des recherches illimitées.`,
+          limit,
+          count,
+        }, { status: 429 })
+      }
+    }
+  }
+
+  // ── Requête Melo ───────────────────────────────────────────────────────────
+  const params = new URLSearchParams()
   const forward = [
     'transactionType','budgetMin','budgetMax',
     'surfaceMin','surfaceMax','roomMin','roomMax',
@@ -16,12 +60,10 @@ export async function GET(req: NextRequest) {
     const val = searchParams.get(key)
     if (val !== null) params.set(key, val)
   })
-
   const arrays = ['propertyTypes','includedDepartments','includedZipcodes','energyCategories','includedCities']
   arrays.forEach(key => {
     searchParams.getAll(key).forEach(v => params.append(`${key}[]`, v))
   })
-
   if (!params.has('itemsPerPage')) params.set('itemsPerPage', '12')
   if (!params.has('withCoherentPrice')) params.set('withCoherentPrice', 'true')
   if (!params.has('expired')) params.set('expired', 'false')
@@ -40,7 +82,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error }, { status: res.status })
     }
     const data = await res.json()
-    return NextResponse.json(data)
+
+    // ── Incrémenter le compteur après succès ───────────────────────────────
+    const today = new Date().toISOString().split('T')[0]
+    const response = NextResponse.json(data)
+
+    if (!userId) {
+      // Cookie pour anonymes
+      const count = await getAnonSearchCount()
+      response.cookies.set(ANON_COOKIE, String(count + 1), { maxAge: 86400, path: '/' })
+      response.cookies.set(ANON_DATE_COOKIE, today, { maxAge: 86400, path: '/' })
+    } else {
+      const premium = await isUserPremium(userId)
+      if (!premium) await incrementSearchCount(userId)
+    }
+
+    return response
   } catch {
     return NextResponse.json({ error: 'Erreur Melo' }, { status: 500 })
   }

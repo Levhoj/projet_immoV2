@@ -138,3 +138,55 @@ export async function isPropertySaved(clerkUserId: string, uuid: string): Promis
     .single()
   return !!data
 }
+
+
+// ─── Rate limiting recherches ─────────────────────────────────────────────────
+
+export const SEARCH_LIMITS = {
+  anonymous: 2,
+  free: 6,
+  premium: Infinity,
+}
+
+export async function getSearchCount(clerkUserId: string): Promise<number> {
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await supabaseAdmin
+    .from('search_usage')
+    .select('count')
+    .eq('clerk_user_id', clerkUserId)
+    .eq('date', today)
+    .single()
+  return data?.count ?? 0
+}
+
+export async function incrementSearchCount(clerkUserId: string): Promise<number> {
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await supabaseAdmin
+    .from('search_usage')
+    .upsert(
+      { clerk_user_id: clerkUserId, date: today, count: 1 },
+      { onConflict: 'clerk_user_id,date' }
+    )
+    .select('count')
+    .single()
+
+  // Si la ligne existait déjà, incrémenter
+  if (data) {
+    const { data: updated } = await supabaseAdmin
+      .from('search_usage')
+      .update({ count: (data.count ?? 0) + 1 })
+      .eq('clerk_user_id', clerkUserId)
+      .eq('date', today)
+      .select('count')
+      .single()
+    return updated?.count ?? 1
+  }
+  return 1
+}
+
+export async function canSearch(clerkUserId: string, isPremium: boolean): Promise<{ allowed: boolean; count: number; limit: number }> {
+  if (isPremium) return { allowed: true, count: 0, limit: Infinity }
+  const count = await getSearchCount(clerkUserId)
+  const limit = SEARCH_LIMITS.free
+  return { allowed: count < limit, count, limit }
+}
