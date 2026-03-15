@@ -242,7 +242,7 @@ export default async function AnnoncePage({ params }: { params: Promise<{ uuid: 
               </div>
 
               <Link
-                href={`/outils/rentabilite?${simulParams.toString()}`}
+                href={`/annonce/${property.uuid}/simuler`}
                 className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
                 <TrendingUp size={15} /> Simuler la rentabilité
               </Link>

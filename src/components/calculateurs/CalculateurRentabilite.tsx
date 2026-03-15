@@ -100,10 +100,17 @@ function WaterfallRow({ row, max }: { row: WaterfallRow; max: number }) {
   )
 }
 
-export default function CalculateurRentabilite() {
+export interface RentabiliteInitialValues {
+  prix?: number
+  copro?: number
+  surface?: number
+  notaire?: number
+}
+
+export default function CalculateurRentabilite({ initial }: { initial?: RentabiliteInitialValues }) {
   // Acquisition
-  const [prix, setPrix] = useState(200000)
-  const [notaire, setNotaire] = useState(16000)
+  const [prix, setPrix] = useState(initial?.prix ?? 200000)
+  const [notaire, setNotaire] = useState(initial?.notaire ?? 16000)
   const [travauxAchat, setTravauxAchat] = useState(5000)
   const [apport, setApport] = useState(40000)
 
@@ -119,7 +126,7 @@ export default function CalculateurRentabilite() {
 
   // Charges
   const [tf, setTf] = useState(1200)
-  const [copro, setCopro] = useState(1000)
+  const [copro, setCopro] = useState(initial?.copro ?? 1000)
   const [gestion, setGestion] = useState(7)
   const [travaux, setTravaux] = useState(500)
 
