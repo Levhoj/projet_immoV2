@@ -40,7 +40,13 @@ function EnergyBadge({ category }: { category: string }) {
 
 export default async function AnnoncePage({ params }: { params: Promise<{ uuid: string }> }) {
   const { uuid } = await params
-  const property = await getProperty(uuid)
+  const { userId } = await auth()
+
+  const [property, alreadySaved] = await Promise.all([
+    getProperty(uuid),
+    userId ? isPropertySaved(userId, uuid) : Promise.resolve(false),
+  ])
+
   if (!property) notFound()
 
   const advert = property.adverts?.[0]
