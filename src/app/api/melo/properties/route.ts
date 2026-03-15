@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const MELO_BASE = 'https://api.notif.immo/documents/properties'
+const MELO_BASE = 'https://preprod-api.notif.immo/documents/properties'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)

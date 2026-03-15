@@ -6,8 +6,8 @@ export async function GET(req: NextRequest) {
   if (query.length < 2) return NextResponse.json([])
 
   try {
-    const res = await fetch(
-      `https://api.notif.immo/indicators/locations?search=${encodeURIComponent(query)}&itemsPerPage=8`,
+  const res = await fetch(
+    `https://preprod-api.notif.immo/indicators/locations?search=${encodeURIComponent(query)}&itemsPerPage=8`,
       {
         headers: {
           'Content-Type': 'application/json',
