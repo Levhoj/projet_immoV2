@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 function calculerMensualite(capital: number, tauxAnnuel: number, dureeAns: number): number {
   const r = tauxAnnuel / 100 / 12
@@ -34,20 +34,30 @@ interface FieldProps {
 }
 
 function Field({ label, id, value, min, max, step, sliderMax, unit, onChange }: FieldProps) {
+  const [focused, setFocused] = useState(false)
+  const isInteger = step >= 1
+  const displayValue = focused
+    ? value
+    : isInteger
+      ? value.toLocaleString('fr-FR')
+      : value.toString().replace('.', ',')
+
   return (
     <div className="mb-5">
       <div className="flex justify-between items-center mb-2">
         <label htmlFor={id} className="text-sm text-slate-500">{label}</label>
         <div className="flex items-center gap-1">
           <input
-            type="number"
+            type={focused ? 'number' : 'text'}
             id={id}
-            value={value}
+            value={displayValue}
             min={min}
             max={max}
             step={step}
-            onChange={e => onChange(parseFloat(e.target.value) || 0)}
-            className="w-28 text-right text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-sky-400 bg-white"
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onChange={e => onChange(parseFloat(e.target.value.replace(',', '.').replace(/\s/g, '')) || 0)}
+            className="w-32 text-right text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-sky-400 bg-white"
           />
           {unit && <span className="text-sm text-slate-400">{unit}</span>}
         </div>
@@ -111,11 +121,22 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
   // Acquisition
   const [prix, setPrix] = useState(initial?.prix ?? 200000)
   const [notaire, setNotaire] = useState(initial?.notaire ?? 16000)
-  const [travauxAchat, setTravauxAchat] = useState(5000)
-  const [apport, setApport] = useState(40000)
+  const [travauxAchat, setTravauxAchat] = useState(initial?.travauxAchat ?? 0)
+  const [apport, setApport] = useState(() => {
+    const p = initial?.prix ?? 200000
+    const n = initial?.notaire ?? Math.round(p * 0.08)
+    return Math.round((p + n) * 0.05)
+  })
 
   // Emprunt
-  const [emprunt, setEmprunt] = useState(181000)
+  const [emprunt, setEmprunt] = useState(() => {
+    const p = initial?.prix ?? 200000
+    const n = initial?.notaire ?? Math.round(p * 0.08)
+    const t = 0
+    const apportInit = Math.round((p + n) * 0.05)
+    return Math.max(0, p + n + t - apportInit)
+  })
+  const [empruntManuel, setEmpruntManuel] = useState(false)
   const [duree, setDuree] = useState(20)
   const [taux, setTaux] = useState(3.5)
   const [assur, setAssur] = useState(0.3)
@@ -127,7 +148,7 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
   // Charges
   const [tf, setTf] = useState(1200)
   const [copro, setCopro] = useState(initial?.copro ?? 1000)
-  const [gestion, setGestion] = useState(7)
+  const [gestion, setGestion] = useState(0)
   const [travaux, setTravaux] = useState(500)
 
   // Fiscalité
@@ -140,6 +161,13 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
   const [amortPct, setAmortPct] = useState(80)
   const [amortTrv, setAmortTrv] = useState(10)
   const [amortMob, setAmortMob] = useState(500)
+
+  // Recalcul automatique de l'emprunt si l'utilisateur n'a pas modifié manuellement
+  useEffect(() => {
+    if (!empruntManuel) {
+      setEmprunt(Math.max(0, prix + notaire + travauxAchat - apport))
+    }
+  }, [prix, notaire, travauxAchat, apport, empruntManuel])
 
   const calc = useMemo(() => {
     const prixTotal = prix + notaire + travauxAchat
@@ -263,7 +291,7 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
 
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Emprunt</h2>
-          <Field label="Montant emprunté" id="emprunt" value={emprunt} min={0} max={2000000} step={1000} sliderMax={1000000} unit="€" onChange={setEmprunt} />
+          <Field label="Montant emprunté" id="emprunt" value={emprunt} min={0} max={2000000} step={1000} sliderMax={1000000} unit="€" onChange={(v) => { setEmpruntManuel(true); setEmprunt(v) }} />
           <Field label="Durée" id="duree" value={duree} min={1} max={30} step={1} unit="ans" onChange={setDuree} />
           <Field label="Taux d'intérêt fixe" id="taux" value={taux} min={0.1} max={10} step={0.01} unit="%" onChange={setTaux} />
           <Field label="Taux d'assurance" id="assur" value={assur} min={0} max={2} step={0.01} unit="%" onChange={setAssur} />

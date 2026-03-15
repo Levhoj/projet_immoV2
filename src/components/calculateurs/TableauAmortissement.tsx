@@ -30,20 +30,29 @@ interface FieldProps {
 }
 
 function Field({ label, id, value, min, max, step, sliderMax, unit, onChange }: FieldProps) {
+  const [focused, setFocused] = useState(false)
+  const isInteger = step >= 1
+  const displayValue = focused
+    ? value
+    : isInteger
+      ? value.toLocaleString('fr-FR')
+      : value.toString().replace('.', ',')
   return (
     <div className="mb-5">
       <div className="flex justify-between items-center mb-2">
         <label htmlFor={id} className="text-sm text-slate-500">{label}</label>
         <div className="flex items-center gap-1">
           <input
-            type="number"
+            type={focused ? 'number' : 'text'}
             id={id}
-            value={value}
+            value={displayValue}
             min={min}
             max={max}
             step={step}
-            onChange={e => onChange(parseFloat(e.target.value) || 0)}
-            className="w-28 text-right text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-sky-400 bg-white"
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onChange={e => onChange(parseFloat(e.target.value.replace(',', '.').replace(' ', '')) || 0)}
+            className="w-32 text-right text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-sky-400 bg-white"
           />
           {unit && <span className="text-sm text-slate-400">{unit}</span>}
         </div>
