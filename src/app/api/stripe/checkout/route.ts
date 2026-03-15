@@ -1,21 +1,28 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { upsertUser } from '@/lib/supabase'
+import { checkRateLimit, verifyCsrf, rateLimitResponse, csrfErrorResponse, RATE_LIMITS } from '@/lib/security'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
 })
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) {
     return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL!))
   }
 
-  // Créer ou récupérer l'utilisateur dans Supabase
-  const user = await currentUser()
-  await upsertUser(userId, user?.emailAddresses[0]?.emailAddress)
+  // CSRF
+  if (!verifyCsrf(req)) return csrfErrorResponse()
+
+  // Rate limiting
+  const { allowed } = await checkRateLimit(
+    userId, 'stripe_checkout',
+    RATE_LIMITS.stripe_checkout.limit,
+    RATE_LIMITS.stripe_checkout.window
+  )
+  if (!allowed) return rateLimitResponse('Trop de tentatives de paiement, réessayez dans une heure.')
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
