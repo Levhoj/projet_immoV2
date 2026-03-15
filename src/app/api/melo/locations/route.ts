@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const query = searchParams.get('q') ?? ''
   if (query.length < 2 || query.length > 100) return NextResponse.json([])
   // Rejeter les caractères suspects
-  if (!/^[\p{L}\p{N}\s\-']+$/u.test(query)) return NextResponse.json([])
+  if (!/^[a-zA-ZÀ-ÿ0-9\s\-']+$/.test(query)) return NextResponse.json([])
 
   // ── Rate limiting ────────────────────────────────────────────────────────
   const cookieName     = userId ? `rendivo_loc_auth_${userId.slice(0, 8)}` : ANON_LOC_COOKIE
