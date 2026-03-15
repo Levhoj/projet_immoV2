@@ -6,8 +6,8 @@ export async function GET(req: NextRequest) {
   if (query.length < 2) return NextResponse.json([])
 
   try {
-  const res = await fetch(
-    `https://preprod-api.notif.immo/indicators/locations?search=${encodeURIComponent(query)}&itemsPerPage=8`,
+    const res = await fetch(
+      `https://preprod-api.notif.immo/indicators/locations?search=${encodeURIComponent(query)}&itemsPerPage=8`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -15,9 +15,15 @@ export async function GET(req: NextRequest) {
         },
       }
     )
+    if (!res.ok) {
+      console.error('Melo locations error:', res.status, await res.text())
+      return NextResponse.json([])
+    }
     const data = await res.json()
-    return NextResponse.json(data['hydra:member'] ?? [])
-  } catch {
+    const members = data['hydra:member'] ?? []
+    return NextResponse.json(members)
+  } catch (err) {
+    console.error('Melo locations fetch error:', err)
     return NextResponse.json([])
   }
 }

@@ -11,6 +11,11 @@ const NAV_LINKS = [
   { href: '/tarifs', label: 'Tarifs' },
 ]
 
+const NAV_LINKS_AUTH = [
+  { href: '/recherche', label: 'Recherche' },
+  { href: '/outils/calculateur-mensualite', label: 'Outils' },
+]
+
 export default function Navbar() {
   const pathname = usePathname()
   return (
@@ -22,18 +27,34 @@ export default function Navbar() {
           </div>
           <span className="text-white font-bold text-base tracking-tight">Rendivo</span>
         </Link>
+
         <div className="hidden md:flex items-center gap-1">
-          {NAV_LINKS.map(link => (
-            <Link key={link.href} href={link.href}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                pathname.startsWith(link.href)
-                  ? 'text-white bg-slate-800'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}>
-              {link.label}
-            </Link>
-          ))}
+          <SignedOut>
+            {NAV_LINKS.map(link => (
+              <Link key={link.href} href={link.href}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  pathname.startsWith(link.href)
+                    ? 'text-white bg-slate-800'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}>
+                {link.label}
+              </Link>
+            ))}
+          </SignedOut>
+          <SignedIn>
+            {NAV_LINKS_AUTH.map(link => (
+              <Link key={link.href} href={link.href}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  pathname.startsWith(link.href)
+                    ? 'text-white bg-slate-800'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}>
+                {link.label}
+              </Link>
+            ))}
+          </SignedIn>
         </div>
+
         <div className="flex items-center gap-3">
           <SignedOut>
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors font-medium">
@@ -50,7 +71,17 @@ export default function Navbar() {
               }`}>
               Dashboard
             </Link>
-            <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'w-8 h-8' } }} />
+            <UserButton afterSignOutUrl="/" appearance={{
+              elements: { avatarBox: 'w-8 h-8' },
+            }}>
+              <UserButton.MenuItems>
+                <UserButton.Link
+                  label="Tarifs & abonnement"
+                  labelIcon={<TrendingUp size={14} />}
+                  href="/tarifs"
+                />
+              </UserButton.MenuItems>
+            </UserButton>
           </SignedIn>
         </div>
       </div>
