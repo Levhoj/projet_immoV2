@@ -6,12 +6,12 @@ const isProtectedRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    // Note les parenthèses après auth
-    await (await auth()).protect() 
-  }
+  if (isProtectedRoute(req)) await auth.protect()
 })
 
 export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
 }
