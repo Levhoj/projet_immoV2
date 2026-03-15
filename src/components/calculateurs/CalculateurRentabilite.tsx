@@ -115,6 +115,7 @@ export interface RentabiliteInitialValues {
   copro?: number
   surface?: number
   notaire?: number
+  travauxAchat?: number
 }
 
 export default function CalculateurRentabilite({ initial }: { initial?: RentabiliteInitialValues }) {
