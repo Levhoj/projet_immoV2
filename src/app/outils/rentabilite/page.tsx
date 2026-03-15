@@ -2,16 +2,16 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
-import { isPremiumUser } from '@/lib/supabase'
+import { isUserPremium } from '@/lib/supabase'
 import CalculateurRentabilite from '@/components/calculateurs/CalculateurRentabilite'
 
 export default async function RentabilitePage() {
   const { userId } = await auth()
   if (!userId) redirect('/login')
 
-  const premium = await isPremiumUser(userId)
+  const isPremium = await isUserPremium(userId)
 
-  if (!premium) {
+  if (!isPremium) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
         <div className="text-center max-w-md">

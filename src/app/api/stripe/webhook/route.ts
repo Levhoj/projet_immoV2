@@ -18,38 +18,33 @@ export async function POST(req: NextRequest) {
   }
 
   switch (event.type) {
-
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
-      const clerkUserId = session.metadata?.userId
-      const stripeCustomerId = session.customer as string
-      const stripeSubscriptionId = session.subscription as string
-      if (clerkUserId) {
-        await setUserPremium(clerkUserId, true, stripeCustomerId, stripeSubscriptionId)
-        console.log('✅ Premium activé pour userId:', clerkUserId)
+      const userId = session.metadata?.userId
+      if (userId) {
+        await setUserPremium(
+          userId,
+          true,
+          session.customer as string,
+          session.subscription as string,
+        )
       }
       break
     }
-
+    case 'customer.subscription.deleted': {
+      const sub = event.data.object as Stripe.Subscription
+      const user = await getUserByStripeCustomerId(sub.customer as string)
+      if (user) {
+        await setUserPremium(user.clerk_user_id, false)
+      }
+      break
+    }
     case 'customer.subscription.updated': {
       const sub = event.data.object as Stripe.Subscription
       const isActive = sub.status === 'active' || sub.status === 'trialing'
-      const stripeCustomerId = sub.customer as string
-      const user = await getUserByStripeCustomerId(stripeCustomerId)
+      const user = await getUserByStripeCustomerId(sub.customer as string)
       if (user) {
-        await setUserPremium(user.clerk_user_id, isActive, stripeCustomerId, sub.id)
-        console.log('🔄 Abonnement mis à jour — statut:', sub.status, '— userId:', user.clerk_user_id)
-      }
-      break
-    }
-
-    case 'customer.subscription.deleted': {
-      const sub = event.data.object as Stripe.Subscription
-      const stripeCustomerId = sub.customer as string
-      const user = await getUserByStripeCustomerId(stripeCustomerId)
-      if (user) {
-        await setUserPremium(user.clerk_user_id, false, stripeCustomerId, sub.id)
-        console.log('❌ Premium révoqué pour userId:', user.clerk_user_id)
+        await setUserPremium(user.clerk_user_id, isActive)
       }
       break
     }
