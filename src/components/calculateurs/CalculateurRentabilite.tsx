@@ -115,10 +115,6 @@ export interface RentabiliteInitialValues {
   copro?: number
   surface?: number
   notaire?: number
-  travauxAchat?: number
-  insee?: string
-  propertyType?: number
-  room?: number
 }
 
 export default function CalculateurRentabilite({ initial }: { initial?: RentabiliteInitialValues }) {
@@ -173,6 +169,7 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
 
   // Charges
   const [tf, setTf] = useState(1200)
+  const [tfAuto, setTfAuto] = useState(true) // true = calculé automatiquement
   const [copro, setCopro] = useState(initial?.copro ?? 1000)
   const [gestion, setGestion] = useState(0)
   const [travaux, setTravaux] = useState(500)
@@ -187,6 +184,13 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
   const [amortPct, setAmortPct] = useState(80)
   const [amortTrv, setAmortTrv] = useState(10)
   const [amortMob, setAmortMob] = useState(500)
+
+  // Recalcul automatique de la taxe foncière = 1 mois de loyer (si pas modifié manuellement)
+  useEffect(() => {
+    if (tfAuto && loyer > 0) {
+      setTf(Math.round(loyer * 12 / 12)) // = 1 mois de loyer
+    }
+  }, [loyer, tfAuto])
 
   // Recalcul automatique de l'emprunt si l'utilisateur n'a pas modifié manuellement
   useEffect(() => {
@@ -356,7 +360,23 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
 
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Charges annuelles</h2>
-          <Field label="Taxe foncière" id="tf" value={tf} min={0} max={10000} step={100} unit="€" onChange={setTf} />
+          <div className="relative">
+            <Field label="Taxe foncière" id="tf" value={tf} min={0} max={10000} step={100} unit="€" onChange={(v) => { setTfAuto(false); setTf(v) }} />
+            {tfAuto && loyer > 0 && (
+              <p className="text-xs text-sky-600 -mt-3 mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-500 flex-shrink-0"></span>
+                Estimée à 1 mois de loyer ·
+                <button onClick={() => setTfAuto(true)} className="underline hover:no-underline">recalculer</button>
+              </p>
+            )}
+            {!tfAuto && (
+              <p className="text-xs text-slate-400 -mt-3 mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0"></span>
+                Saisie manuelle ·
+                <button onClick={() => setTfAuto(true)} className="underline hover:no-underline text-sky-500">remettre auto</button>
+              </p>
+            )}
+          </div>
           <Field label="Charges copropriété" id="copro" value={copro} min={0} max={10000} step={100} unit="€" onChange={setCopro} />
           <Field label="Frais de gestion" id="gestion" value={gestion} min={0} max={20} step={0.5} unit="%" onChange={setGestion} />
           <Field label="Travaux / entretien" id="travaux" value={travaux} min={0} max={20000} step={100} unit="€" onChange={setTravaux} />
