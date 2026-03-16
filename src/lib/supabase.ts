@@ -8,7 +8,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 // Client admin (server-side uniquement)
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-// Client public (peut être utilisé côté client)
+// Client public
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // ─── Fonctions utilisateurs ───────────────────────────────────────────────────
