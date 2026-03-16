@@ -236,3 +236,60 @@ export function getTypeBienAnil(
   if (propertyType === 0) return room >= 3 ? 'app3' : 'app12'
   return null
 }
+
+
+// ─── Zones ABC / Vacance locative ─────────────────────────────────────────────
+
+export interface ZoneAbc {
+  zone_abc: string
+  vacance_mois: number
+  libgeo: string
+}
+
+export async function getZoneAbc(inseeC: string): Promise<ZoneAbc | null> {
+  const { data, error } = await supabaseAdmin
+    .from('zones_abc')
+    .select('zone_abc, vacance_mois, libgeo')
+    .eq('insee_c', inseeC)
+    .single()
+  if (error || !data) return null
+  return data as ZoneAbc
+}
+
+
+// ─── Zones ABC / Vacance locative ─────────────────────────────────────────────
+
+export interface ZoneAbc {
+  zone_abc: string
+  vacance_mois: number
+  libgeo: string
+}
+
+export async function getZoneAbc(inseeC: string): Promise<ZoneAbc | null> {
+  const { data, error } = await supabaseAdmin
+    .from('zones_abc')
+    .select('zone_abc, vacance_mois, libgeo')
+    .eq('insee_c', inseeC)
+    .single()
+  if (error || !data) return null
+  return data as ZoneAbc
+}
+
+
+// ─── Zones ABC / Vacance locative ─────────────────────────────────────────────
+
+export interface ZoneAbc {
+  zone_abc: string
+  vacance_mois: number
+  libgeo: string
+}
+
+export async function getZoneAbc(inseeC: string): Promise<ZoneAbc | null> {
+  const { data, error } = await supabaseAdmin
+    .from('zones_abc')
+    .select('zone_abc, vacance_mois, libgeo')
+    .eq('insee_c', inseeC)
+    .single()
+  if (error || !data) return null
+  return data as ZoneAbc
+}

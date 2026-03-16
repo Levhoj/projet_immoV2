@@ -170,6 +170,10 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
       .finally(() => setLoyerLoading(false))
   }, [initial?.insee, initial?.surface, initial?.propertyType, initial?.room])
   const [vacance, setVacance] = useState(0.5)
+  const [vacanceAuto, setVacanceAuto] = useState(true)
+  const [vacanceZone, setVacanceZone] = useState<{ zone: string; label: string } | null>(null)
+  const [vacanceAuto, setVacanceAuto] = useState(true)
+  const [vacanceInfo, setVacanceInfo] = useState<{ zone: string; zoneLabel: string } | null>(null)
 
   // Charges
   const [tf, setTf] = useState(1200)
@@ -188,6 +192,34 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
   const [amortPct, setAmortPct] = useState(80)
   const [amortTrv, setAmortTrv] = useState(10)
   const [amortMob, setAmortMob] = useState(500)
+
+  // Chargement automatique de la vacance locative via zones ABC
+  useEffect(() => {
+    if (!initial?.insee || !vacanceAuto) return
+    fetch(`/api/vacance?insee=${initial.insee}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.vacanceMois !== undefined) {
+          setVacance(data.vacanceMois)
+          setVacanceInfo({ zone: data.zone, zoneLabel: data.zoneLabel })
+        }
+      })
+      .catch(() => {})
+  }, [initial?.insee, vacanceAuto])
+
+  // Chargement automatique de la vacance locative via zones ABC
+  useEffect(() => {
+    if (!initial?.insee || !vacanceAuto) return
+    fetch(`/api/vacance?insee=${initial.insee}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.vacanceMois !== undefined && vacanceAuto) {
+          setVacance(data.vacanceMois)
+          setVacanceZone({ zone: data.zone, label: data.zoneLabel })
+        }
+      })
+      .catch(() => {})
+  }, [initial?.insee, vacanceAuto])
 
   // Recalcul automatique de la taxe foncière = 1 mois de loyer (si pas modifié manuellement)
   useEffect(() => {
@@ -355,7 +387,23 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
               <p className="text-xs text-sky-400 mt-0.5">Source : Estimations ANIL · SeLoger · LeBonCoin</p>
             </div>
           )}
-          <Field label="Vacance locative" id="vacance" value={vacance} min={0} max={6} step={0.5} unit="mois/an" onChange={setVacance} />
+          <div className="relative">
+            <Field label="Vacance locative" id="vacance" value={vacance} min={0} max={6} step={0.5} unit="mois/an" onChange={(v) => { setVacanceAuto(false); setVacance(v) }} />
+            {vacanceInfo && vacanceAuto && (
+              <p className="text-xs text-sky-600 -mt-3 mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-500 flex-shrink-0"></span>
+                {vacanceInfo.zoneLabel} ·
+                <button onClick={() => setVacanceAuto(true)} className="underline hover:no-underline">recalculer</button>
+              </p>
+            )}
+            {!vacanceAuto && (
+              <p className="text-xs text-slate-400 -mt-3 mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0"></span>
+                Saisie manuelle ·
+                <button onClick={() => setVacanceAuto(true)} className="underline hover:no-underline text-sky-500">remettre auto</button>
+              </p>
+            )}
+          </div>
           <div className="mt-2 pt-3 border-t border-slate-100 flex justify-between text-sm">
             <span className="text-slate-400">Loyers annuels nets</span>
             <span className="font-bold text-slate-900">{fmt(calc.loyersAn)}</span>
