@@ -115,7 +115,6 @@ export interface RentabiliteInitialValues {
   copro?: number
   surface?: number
   notaire?: number
-  travauxAchat?: number
 }
 
 export default function CalculateurRentabilite({ initial }: { initial?: RentabiliteInitialValues }) {
@@ -144,6 +143,28 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
 
   // Revenus
   const [loyer, setLoyer] = useState(900)
+  const [loyerEstime, setLoyerEstime] = useState<{ min: number; max: number; commune: string; fiabilite: string } | null>(null)
+  const [loyerLoading, setLoyerLoading] = useState(false)
+
+  // Chargement automatique du loyer estimé si on a les données ANIL
+  useEffect(() => {
+    if (!initial?.insee || !initial?.surface) return
+    const insee   = initial.insee
+    const surface = initial.surface
+    const propType = initial.propertyType ?? 0
+    const room    = initial.room ?? 2
+    setLoyerLoading(true)
+    fetch(`/api/loyer?insee=${insee}&propertyType=${propType}&room=${room}&surface=${surface}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.loyerMensuel) {
+          setLoyer(data.loyerMensuel)
+          setLoyerEstime({ min: data.loyerMin, max: data.loyerMax, commune: data.commune, fiabilite: data.fiabilite })
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoyerLoading(false))
+  }, [initial?.insee, initial?.surface, initial?.propertyType, initial?.room])
   const [vacance, setVacance] = useState(0.5)
 
   // Charges
@@ -308,6 +329,20 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Revenus locatifs</h2>
           <Field label="Loyer mensuel HC" id="loyer" value={loyer} min={0} max={5000} step={50} unit="€" onChange={setLoyer} />
+          {loyerLoading && (
+            <p className="text-xs text-slate-400 -mt-3 mb-4">Estimation du loyer en cours...</p>
+          )}
+          {loyerEstime && !loyerLoading && (
+            <div className="bg-sky-50 border border-sky-200 rounded-xl px-4 py-2.5 -mt-3 mb-4">
+              <p className="text-xs text-sky-700">
+                <span className="font-semibold">Loyer estimé ANIL</span> à {loyerEstime.commune} : {loyerEstime.min.toLocaleString('fr-FR')}–{loyerEstime.max.toLocaleString('fr-FR')} €/mois
+                <span className={`ml-2 font-semibold ${loyerEstime.fiabilite === 'haute' ? 'text-emerald-600' : loyerEstime.fiabilite === 'moyenne' ? 'text-amber-600' : 'text-red-500'}`}>
+                  (fiabilité {loyerEstime.fiabilite})
+                </span>
+              </p>
+              <p className="text-xs text-sky-400 mt-0.5">Source : Estimations ANIL · SeLoger · LeBonCoin</p>
+            </div>
+          )}
           <Field label="Vacance locative" id="vacance" value={vacance} min={0} max={6} step={0.5} unit="mois/an" onChange={setVacance} />
           <div className="mt-2 pt-3 border-t border-slate-100 flex justify-between text-sm">
             <span className="text-slate-400">Loyers annuels nets</span>

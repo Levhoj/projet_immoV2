@@ -190,3 +190,49 @@ export async function canSearch(clerkUserId: string, isPremium: boolean): Promis
   const limit = SEARCH_LIMITS.free
   return { allowed: count < limit, count, limit }
 }
+
+
+// ─── Loyers ANIL ──────────────────────────────────────────────────────────────
+
+export interface LoyerCommune {
+  loypredm2: number
+  lwr_ipm2: number
+  upr_ipm2: number
+  libgeo: string
+  nbobs_com: number
+  r2_adj: number
+}
+
+/**
+ * Récupère le loyer médian au m² pour une commune et un type de bien.
+ * @param inseeC   Code INSEE de la commune (ex: "75112")
+ * @param typeBien "app12" (T1-T2), "app3" (T3+), "maison"
+ */
+export async function getLoyerCommune(
+  inseeC: string,
+  typeBien: 'app12' | 'app3' | 'maison'
+): Promise<LoyerCommune | null> {
+  const { data, error } = await supabaseAdmin
+    .from('loyers_communes')
+    .select('loypredm2, lwr_ipm2, upr_ipm2, libgeo, nbobs_com, r2_adj')
+    .eq('insee_c', inseeC)
+    .eq('type_bien', typeBien)
+    .single()
+
+  if (error || !data) return null
+  return data as LoyerCommune
+}
+
+/**
+ * Détermine le type de bien ANIL selon le type Melo et le nombre de pièces
+ * propertyType : 0=appart, 1=maison, autres=null
+ * room : nombre de pièces
+ */
+export function getTypeBienAnil(
+  propertyType: number,
+  room: number
+): 'app12' | 'app3' | 'maison' | null {
+  if (propertyType === 1) return 'maison'
+  if (propertyType === 0) return room >= 3 ? 'app3' : 'app12'
+  return null
+}

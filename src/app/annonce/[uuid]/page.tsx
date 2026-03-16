@@ -203,9 +203,12 @@ export default async function AnnoncePage({
   if (property.title) simulParams.set('titre', property.title)
   if (property.city?.name) simulParams.set('ville', property.city.name)
   if (property.city?.zipcode) simulParams.set('cp', property.city.zipcode)
+  if (property.city?.insee) simulParams.set('insee', property.city.insee)
   if (advert?.pictures?.[0]) simulParams.set('photo', advert.pictures[0])
   else if (advert?.picturesRemote?.[0]) simulParams.set('photo', advert.picturesRemote[0])
   if (property.pricePerMeter) simulParams.set('ppm', String(Math.round(property.pricePerMeter)))
+  if (property.propertyType !== undefined) simulParams.set('propType', String(property.propertyType))
+  if (property.room > 0) simulParams.set('room', String(property.room))
 
   return (
     <div className="min-h-screen bg-slate-50">

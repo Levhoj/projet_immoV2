@@ -14,24 +14,27 @@ export default async function SimulerPage({
 }) {
   const { uuid } = await params
   const sp = await searchParams
-
   const { userId } = await auth()
   if (!userId) redirect('/login')
 
   const isPremium = await isUserPremium(userId)
 
-  // Lire toutes les données depuis les params URL — zéro appel Melo
+  // Lire les données depuis les params URL — zéro appel API supplémentaire
   const prix    = sp.prix    ? parseInt(sp.prix)    : undefined
-  const copro   = sp.copro   ? parseInt(sp.copro)   : undefined
   const surface = sp.surface ? parseInt(sp.surface) : undefined
-  const notaire = prix ? Math.round(prix * 0.08) : 16000
-  const titre   = sp.titre ?? 'Bien immobilier'
-  const ville   = sp.ville ?? ''
-  const cp      = sp.cp ?? ''
-  const photo   = sp.photo ?? null
-  const ppm     = sp.ppm ? parseInt(sp.ppm) : undefined
+  const copro   = sp.copro   ? parseInt(sp.copro)   : undefined
+  const titre   = sp.titre   ?? 'Bien immobilier'
+  const ville   = sp.ville   ?? ''
+  const cp      = sp.cp      ?? ''
+  const ppm     = sp.ppm     ? parseInt(sp.ppm)     : undefined
+  const photo   = sp.photo   ?? ''
+  const insee   = sp.insee   ?? ''
+  const propType = sp.propType ? parseInt(sp.propType) : 0
+  const room     = sp.room    ? parseInt(sp.room)    : 2
 
-  const initialValues = { prix, copro, surface, notaire }
+  const fraisNotaire = prix ? Math.round(prix * 0.08) : 16000
+
+  const initialValues = { prix, notaire: fraisNotaire, copro, surface, insee, propertyType: propType, room }
 
   if (!isPremium) {
     return (
@@ -112,15 +115,11 @@ export default async function SimulerPage({
           </div>
 
           <div className="text-right flex-shrink-0">
-            {prix && (
-              <>
-                <div className="text-2xl font-extrabold text-white">
-                  {prix.toLocaleString('fr-FR')} €
-                </div>
-                {ppm && (
-                  <div className="text-xs text-slate-400">{ppm.toLocaleString('fr-FR')} €/m²</div>
-                )}
-              </>
+            <div className="text-2xl font-extrabold text-white">
+              {prix ? prix.toLocaleString('fr-FR') + ' €' : '—'}
+            </div>
+            {ppm && (
+              <div className="text-xs text-slate-400">{ppm.toLocaleString('fr-FR')} €/m²</div>
             )}
           </div>
 
@@ -130,7 +129,7 @@ export default async function SimulerPage({
           </Link>
         </div>
 
-        {/* Info pré-remplissage */}
+        {/* Infos pré-remplies */}
         <div className="bg-sky-50 border border-sky-200 rounded-xl px-5 py-3 mb-8 flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-sky-500 flex-shrink-0" />
           <p className="text-sm text-sky-700">
@@ -140,9 +139,8 @@ export default async function SimulerPage({
           </p>
         </div>
 
-        {/* Calculateur pré-rempli — même composant, zéro duplication */}
+        {/* Calculateur pré-rempli */}
         <CalculateurRentabilite initial={initialValues} />
-
       </div>
     </div>
   )
