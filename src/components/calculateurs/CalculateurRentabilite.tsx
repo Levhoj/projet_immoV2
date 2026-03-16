@@ -172,12 +172,10 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
   const [vacance, setVacance] = useState(0.5)
   const [vacanceAuto, setVacanceAuto] = useState(true)
   const [vacanceZone, setVacanceZone] = useState<{ zone: string; label: string } | null>(null)
-  const [vacanceAuto, setVacanceAuto] = useState(true)
-  const [vacanceInfo, setVacanceInfo] = useState<{ zone: string; zoneLabel: string } | null>(null)
 
   // Charges
   const [tf, setTf] = useState(1200)
-  const [tfAuto, setTfAuto] = useState(true) // true = calculé automatiquement
+  const [tfAuto, setTfAuto] = useState(true)
   const [copro, setCopro] = useState(initial?.copro ?? 1000)
   const [gestion, setGestion] = useState(0)
   const [travaux, setTravaux] = useState(500)
@@ -192,20 +190,6 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
   const [amortPct, setAmortPct] = useState(80)
   const [amortTrv, setAmortTrv] = useState(10)
   const [amortMob, setAmortMob] = useState(500)
-
-  // Chargement automatique de la vacance locative via zones ABC
-  useEffect(() => {
-    if (!initial?.insee || !vacanceAuto) return
-    fetch(`/api/vacance?insee=${initial.insee}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.vacanceMois !== undefined) {
-          setVacance(data.vacanceMois)
-          setVacanceInfo({ zone: data.zone, zoneLabel: data.zoneLabel })
-        }
-      })
-      .catch(() => {})
-  }, [initial?.insee, vacanceAuto])
 
   // Chargement automatique de la vacance locative via zones ABC
   useEffect(() => {
@@ -389,10 +373,10 @@ export default function CalculateurRentabilite({ initial }: { initial?: Rentabil
           )}
           <div className="relative">
             <Field label="Vacance locative" id="vacance" value={vacance} min={0} max={6} step={0.5} unit="mois/an" onChange={(v) => { setVacanceAuto(false); setVacance(v) }} />
-            {vacanceInfo && vacanceAuto && (
+            {vacanceZone && vacanceAuto && (
               <p className="text-xs text-sky-600 -mt-3 mb-4 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-sky-500 flex-shrink-0"></span>
-                {vacanceInfo.zoneLabel} ·
+                Zone {vacanceZone.zone} — {vacanceZone.label} ·
                 <button onClick={() => setVacanceAuto(true)} className="underline hover:no-underline">recalculer</button>
               </p>
             )}
