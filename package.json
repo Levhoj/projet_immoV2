@@ -17,7 +17,9 @@
     "stripe": "^17.0.0",
     "@stripe/stripe-js": "^5.0.0",
     "lucide-react": "^0.483.0",
-    "clsx": "^2.1.0"
+    "clsx": "^2.1.0",
+    "server-only": "^0.0.1"
+
   },
   "devDependencies": {
     "typescript": "^5",
