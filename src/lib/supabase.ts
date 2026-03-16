@@ -1,19 +1,15 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseUrl        = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseAnonKey    = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Client admin (server-side uniquement)
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+export const supabase      = createClient(supabaseUrl, supabaseAnonKey)
 
-// Client public
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// ─── Utilisateurs ─────────────────────────────────────────────────────────────
 
-// ─── Fonctions utilisateurs ───────────────────────────────────────────────────
-
-/** Crée un utilisateur s'il n'existe pas encore */
 export async function upsertUser(clerkUserId: string, email?: string) {
   const { data, error } = await supabaseAdmin
     .from('users')
@@ -24,65 +20,50 @@ export async function upsertUser(clerkUserId: string, email?: string) {
   return data
 }
 
-/** Récupère un utilisateur par son clerk_user_id */
 export async function getUserByClerkId(clerkUserId: string) {
-  const { data, error } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from('users')
     .select('*')
     .eq('clerk_user_id', clerkUserId)
     .single()
-  if (error) return null
   return data
 }
 
-/** Récupère un utilisateur par son stripe_customer_id */
 export async function getUserByStripeCustomerId(stripeCustomerId: string) {
-  const { data, error } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from('users')
     .select('*')
     .eq('stripe_customer_id', stripeCustomerId)
     .single()
-  if (error) return null
   return data
 }
 
-/** Active le Premium d'un utilisateur */
-export async function setUserPremium(
-  clerkUserId: string,
-  isPremium: boolean,
-  stripeCustomerId?: string,
-  stripeSubscriptionId?: string,
-) {
-  const { data, error } = await supabaseAdmin
+export async function setUserPremium(clerkUserId: string, isPremium: boolean, stripeCustomerId?: string) {
+  const update: Record<string, unknown> = { is_premium: isPremium }
+  if (stripeCustomerId) update.stripe_customer_id = stripeCustomerId
+  const { error } = await supabaseAdmin
     .from('users')
-    .upsert({
-      clerk_user_id: clerkUserId,
-      is_premium: isPremium,
-      stripe_customer_id: stripeCustomerId,
-      stripe_subscription_id: stripeSubscriptionId,
-      premium_expires_at: isPremium ? null : new Date().toISOString(),
-    }, { onConflict: 'clerk_user_id' })
-    .select()
-    .single()
+    .update(update)
+    .eq('clerk_user_id', clerkUserId)
   if (error) throw error
-  return data
 }
 
-/** Vérifie si un utilisateur est Premium */
 export async function isUserPremium(clerkUserId: string): Promise<boolean> {
-  const user = await getUserByClerkId(clerkUserId)
-  if (!user) return false
-  return user.is_premium === true
+  const { data } = await supabaseAdmin
+    .from('users')
+    .select('is_premium')
+    .eq('clerk_user_id', clerkUserId)
+    .single()
+  return data?.is_premium ?? false
 }
 
-/** Met à jour le stripe_customer_id d'un utilisateur */
 export async function setStripeCustomerId(clerkUserId: string, stripeCustomerId: string) {
   const { error } = await supabaseAdmin
     .from('users')
-    .upsert({ clerk_user_id: clerkUserId, stripe_customer_id: stripeCustomerId }, { onConflict: 'clerk_user_id' })
+    .update({ stripe_customer_id: stripeCustomerId })
+    .eq('clerk_user_id', clerkUserId)
   if (error) throw error
 }
-
 
 // ─── Annonces sauvegardées ────────────────────────────────────────────────────
 
@@ -140,7 +121,6 @@ export async function isPropertySaved(clerkUserId: string, uuid: string): Promis
   return !!data
 }
 
-
 // ─── Rate limiting recherches ─────────────────────────────────────────────────
 
 export const SEARCH_LIMITS = {
@@ -162,27 +142,12 @@ export async function getSearchCount(clerkUserId: string): Promise<number> {
 
 export async function incrementSearchCount(clerkUserId: string): Promise<number> {
   const today = new Date().toISOString().split('T')[0]
-  const { data } = await supabaseAdmin
+  const count = await getSearchCount(clerkUserId)
+  const newCount = count + 1
+  await supabaseAdmin
     .from('search_usage')
-    .upsert(
-      { clerk_user_id: clerkUserId, date: today, count: 1 },
-      { onConflict: 'clerk_user_id,date' }
-    )
-    .select('count')
-    .single()
-
-  // Si la ligne existait déjà, incrémenter
-  if (data) {
-    const { data: updated } = await supabaseAdmin
-      .from('search_usage')
-      .update({ count: (data.count ?? 0) + 1 })
-      .eq('clerk_user_id', clerkUserId)
-      .eq('date', today)
-      .select('count')
-      .single()
-    return updated?.count ?? 1
-  }
-  return 1
+    .upsert({ clerk_user_id: clerkUserId, date: today, count: newCount }, { onConflict: 'clerk_user_id,date' })
+  return newCount
 }
 
 export async function canSearch(clerkUserId: string, isPremium: boolean): Promise<{ allowed: boolean; count: number; limit: number }> {
@@ -191,7 +156,6 @@ export async function canSearch(clerkUserId: string, isPremium: boolean): Promis
   const limit = SEARCH_LIMITS.free
   return { allowed: count < limit, count, limit }
 }
-
 
 // ─── Loyers ANIL ──────────────────────────────────────────────────────────────
 
@@ -204,11 +168,6 @@ export interface LoyerCommune {
   r2_adj: number
 }
 
-/**
- * Récupère le loyer médian au m² pour une commune et un type de bien.
- * @param inseeC   Code INSEE de la commune (ex: "75112")
- * @param typeBien "app12" (T1-T2), "app3" (T3+), "maison"
- */
 export async function getLoyerCommune(
   inseeC: string,
   typeBien: 'app12' | 'app3' | 'maison'
@@ -219,16 +178,10 @@ export async function getLoyerCommune(
     .eq('insee_c', inseeC)
     .eq('type_bien', typeBien)
     .single()
-
   if (error || !data) return null
   return data as LoyerCommune
 }
 
-/**
- * Détermine le type de bien ANIL selon le type Melo et le nombre de pièces
- * propertyType : 0=appart, 1=maison, autres=null
- * room : nombre de pièces
- */
 export function getTypeBienAnil(
   propertyType: number,
   room: number
@@ -237,45 +190,6 @@ export function getTypeBienAnil(
   if (propertyType === 0) return room >= 3 ? 'app3' : 'app12'
   return null
 }
-
-
-// ─── Zones ABC / Vacance locative ─────────────────────────────────────────────
-
-export interface ZoneAbc {
-  zone_abc: string
-  vacance_mois: number
-  libgeo: string
-}
-
-export async function getZoneAbc(inseeC: string): Promise<ZoneAbc | null> {
-  const { data, error } = await supabaseAdmin
-    .from('zones_abc')
-    .select('zone_abc, vacance_mois, libgeo')
-    .eq('insee_c', inseeC)
-    .single()
-  if (error || !data) return null
-  return data as ZoneAbc
-}
-
-
-// ─── Zones ABC / Vacance locative ─────────────────────────────────────────────
-
-export interface ZoneAbc {
-  zone_abc: string
-  vacance_mois: number
-  libgeo: string
-}
-
-export async function getZoneAbc(inseeC: string): Promise<ZoneAbc | null> {
-  const { data, error } = await supabaseAdmin
-    .from('zones_abc')
-    .select('zone_abc, vacance_mois, libgeo')
-    .eq('insee_c', inseeC)
-    .single()
-  if (error || !data) return null
-  return data as ZoneAbc
-}
-
 
 // ─── Zones ABC / Vacance locative ─────────────────────────────────────────────
 
